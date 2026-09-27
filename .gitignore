@@ -1,0 +1,3 @@
+# weAudit session log: which files a review session opened. Not
+# attestation, and churns every session.
+.vscode/.weauditdaylog

@@ -1,0 +1,31 @@
+# Which files are subject to whole-file review (see
+# shakenfist/development docs/code-review-tracking.md). Patterns are
+# fnmatch-style against repo-relative paths; '*' matches across
+# directory separators. An empty include list would mean all tracked
+# files.
+#
+# The Python client and its tests, the shell and YAML that decide
+# what CI runs, the packaging and tox configuration, and the
+# requirements files -- which decide what gets installed alongside
+# the client, and so are where a supply-chain change would land --
+# plus the Markdown documentation.
+include = [
+    '*.py',
+    '*.sh',
+    '*.md',
+    '*.yml',
+    '*.yaml',
+    '*.cfg',
+    '*.ini',
+    '*.toml',
+    '*requirements.txt',
+]
+
+# Named here rather than merely left out of include above, so that
+# each one is a recorded decision that something should not be
+# reviewed rather than a silence nobody chose.
+exclude = [
+    '.gitignore',           # tool configuration, no behaviour of its own
+    'AUTHORS',              # a list of names, no behaviour
+    'LICENSE',              # verbatim licence text
+]
