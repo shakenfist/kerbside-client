@@ -17,6 +17,6 @@ for how this works, including how to verify the attestations.
 
 | File | Reviewer | Date | Blob SHA | Source |
 |------|----------|------|----------|--------|
-| .github/workflows/prune-reviews.yml | mikal | 2026-10-16 | 91ff1783e658 | development@09606ce904a2 |
-| tools/ci-prune-reviews.sh | mikal | 2026-10-16 | b4ce5b64c79a | development@09606ce904a2 |
+| .github/workflows/prune-reviews.yml | mikal | 2026-11-01 | 0c0cfe362b24 | development@d8055a5e1696 |
+| tools/ci-prune-reviews.sh | mikal | 2026-11-01 | 3c00a9489c0b | development@d8055a5e1696 |
 | tools/review-tracking.sh | mikal | 2026-10-28 | fcadd30b9cea | development@94b8a1385ce1 |
