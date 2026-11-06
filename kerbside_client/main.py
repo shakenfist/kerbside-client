@@ -14,6 +14,8 @@ from kerbside_client import apiclient
 
 
 LOG = logs.setup_console(__name__)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger(__name__).propagate = False
 CLIENT = None
 
 

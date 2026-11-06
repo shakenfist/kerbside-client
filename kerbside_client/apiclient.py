@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from pbr.version import VersionInfo
 import requests
 import time
 
@@ -220,6 +219,19 @@ class Client(object):
         return r.json()
 
 
+VERSION_CACHE = None
+
+
 def get_user_agent():
-    ks_version = VersionInfo('kerbside_client').version_string()
+    global VERSION_CACHE
+
+    if not VERSION_CACHE:
+        try:
+            from kerbside_client import _version
+            ks_version = VERSION_CACHE = _version.version
+        except ImportError:
+            ks_version = VERSION_CACHE = 'unreleased development version'
+    else:
+        ks_version = VERSION_CACHE
+
     return 'Mozilla/5.0 (Ubuntu; Linux x86_64) Kerbside/%s' % ks_version

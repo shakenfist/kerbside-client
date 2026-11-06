@@ -6,3 +6,12 @@
 # working tree -- a test run, a local CLI invocation -- writes these.
 __pycache__/
 *.pyc
+
+# Written by setuptools_scm at build time from the most recent v* tag.
+# A committed copy shadows the build-time version and ships a stale one.
+kerbside_client/_version.py
+
+# Build output. "python -m build" leaves both behind in the tree.
+build/
+dist/
+*.egg-info/
