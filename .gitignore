@@ -1,3 +1,8 @@
 # weAudit session log: which files a review session opened. Not
 # attestation, and churns every session.
 .vscode/.weauditdaylog
+
+# Python bytecode caches. Anything that imports the package in the
+# working tree -- a test run, a local CLI invocation -- writes these.
+__pycache__/
+*.pyc

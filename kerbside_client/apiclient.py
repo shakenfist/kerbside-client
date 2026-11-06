@@ -1,5 +1,3 @@
-import copy
-import errno
 import json
 import logging
 import os
@@ -122,13 +120,10 @@ class Client(object):
 
         if r.text:
             try:
-                LOG.debug('Data:\n    %s'
-                            % ('\n    '.join(json.dumps(json.loads(r.text),
-                                                        indent=4,
-                                                        sort_keys=True).split('\n'))))
+                pretty = json.dumps(json.loads(r.text), indent=4, sort_keys=True)
+                LOG.debug('Data:\n    %s' % '\n    '.join(pretty.split('\n')))
             except Exception:
-                LOG.debug('Text:\n    %s'
-                            % ('\n    '.join(r.text.split('\n'))))
+                LOG.debug('Text:\n    %s' % '\n    '.join(r.text.split('\n')))
         LOG.debug('-------------------------------------------------------')
 
         if r.status_code in STATUS_CODES_TO_ERRORS:
@@ -223,6 +218,7 @@ class Client(object):
     def session_terminate(self, session_id):
         r = self._request_url('GET', '/session/' + session_id + '/terminate')
         return r.json()
+
 
 def get_user_agent():
     ks_version = VersionInfo('kerbside_client').version_string()
