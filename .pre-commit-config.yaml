@@ -1,0 +1,33 @@
+# Pre-commit hooks for kerbside-client
+#
+# Install with: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # GitHub Actions workflow linter
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        name: Lint GitHub Actions workflows
+        description: Static checker for GitHub Actions workflow files
+
+  # Shell script linter for the helper scripts in tools/
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        files: ^tools/
+        types_or: [sh, bash, shell]
+        args: ['-x']
+
+  # The llm-context-lint-ci audit requires every project with agent
+  # context to run skillsaw here and in CI. AGENTS.md is agent context,
+  # and it is code an agent executes against: a smuggled unicode
+  # character or a credential pasted into it should be caught by the
+  # commit that introduces it rather than by the daily audit a day
+  # later.
+  - repo: https://github.com/stbenjam/skillsaw
+    rev: v0.22.0
+    hooks:
+      - id: skillsaw
