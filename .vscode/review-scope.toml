@@ -4,21 +4,21 @@
 # directory separators. An empty include list would mean all tracked
 # files.
 #
-# The Python client and its tests, the shell and YAML that decide
-# what CI runs, the packaging and tox configuration, and the
-# requirements files -- which decide what gets installed alongside
-# the client, and so are where a supply-chain change would land --
-# plus the Markdown documentation.
+# The Python client and its tests, the shell, YAML and JSON that
+# decide what CI runs and what dependency bumps are proposed, and the
+# packaging and tox configuration -- which decides what gets installed
+# alongside the client, and so is where a supply-chain change would
+# land -- plus the Markdown documentation.
 include = [
     '*.py',
     '*.sh',
     '*.md',
     '*.yml',
     '*.yaml',
+    '*.json',
     '*.cfg',
     '*.ini',
     '*.toml',
-    '*requirements.txt',
 ]
 
 # Named here rather than merely left out of include above, so that
