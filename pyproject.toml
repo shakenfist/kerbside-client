@@ -1,0 +1,71 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "setuptools_scm[simple]>=6.2",
+    "wheel",
+    "build",
+    "twine"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kerbside-client"
+dynamic = ["version"]
+
+description = "The command line and API client for the Kerbside SPICE VDI proxy"
+readme = "README.md"
+# Minimum Python determined by oldest supported distro.
+# See ARCHITECTURE.md "Supported Platforms" table. Keep in step with
+# constraints.python in renovate.json.
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Michael Still", email = "mikal@stillhq.com"},
+]
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "click>=8.0.0",         # bsd
+    "prettytable",          # bsd
+    "requests",             # apache2
+    "shakenfist-utilities", # apache2
+]
+
+[project.urls]
+"Homepage" = "https://github.com/shakenfist/kerbside"
+"Bug Tracker" = "https://github.com/shakenfist/kerbside-client/issues"
+
+[project.scripts]
+kerbside-client = "kerbside_client.main:cli"
+
+[project.optional-dependencies]
+test = [
+    "coverage",     # apache2
+    "testtools",    # mit
+    "mock",         # bsd
+    "stestr",       # apache2
+    "flake8",       # mit
+]
+
+# kerbside_client.tests runs from the checkout and must not ship. The
+# exclude drops it as a package, but include-package-data defaults to
+# true under pyproject.toml and setuptools_scm's file finder offers
+# every git-tracked file as package data, so it would come straight
+# back as data without the include-package-data line. Nothing in this
+# package reads a data file at runtime.
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["kerbside_client*"]
+exclude = ["kerbside_client.tests*"]
+
+[tool.setuptools_scm]
+git_describe_command = "git describe --dirty --tags --match v* --first-parent"
+write_to = "kerbside_client/_version.py"
