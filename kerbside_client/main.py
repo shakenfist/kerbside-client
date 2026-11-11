@@ -14,6 +14,8 @@ from kerbside_client import apiclient
 
 
 LOG = logs.setup_console(__name__)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger(__name__).propagate = False
 CLIENT = None
 
 
@@ -128,13 +130,13 @@ def show_source(ctx, name):
         format = '%-20s: %s'
 
     for field, field_pretty in [
-        ('name', 'Name'),
-        ('errored', 'Errored'), ('flavor', 'Flavors'),
-        ('last_seen', 'Last seen'),
-        ('project_domain_id', 'Project domain ID'),
-        ('project_name', 'Project name'), ('seen_by', 'Seen by'),
-        ('type', 'Type'), ('url', 'URL'),
-        ('user_domain_id', 'User domain ID'), ('username', 'Username')]:
+            ('name', 'Name'),
+            ('errored', 'Errored'), ('flavor', 'Flavors'),
+            ('last_seen', 'Last seen'),
+            ('project_domain_id', 'Project domain ID'),
+            ('project_name', 'Project name'), ('seen_by', 'Seen by'),
+            ('type', 'Type'), ('url', 'URL'),
+            ('user_domain_id', 'User domain ID'), ('username', 'Username')]:
         if source.get(field):
             if field == 'flavor':
                 print(format % (field_pretty,
@@ -202,11 +204,11 @@ def show_console(ctx, source, uuid):
         format = '%-20s: %s'
 
     for field, field_pretty in [
-        ('name', 'Name'), ('uuid', 'UUID'), ('source', 'Source'),
-        ('discovered', 'Discovered'), ('host_subject', 'Host subject'),
-        ('hypervisor', 'Hypervisor'), ('hypervisor_ip', 'Hypervisor IP'),
-        ('insecure_port', 'Insecure VDI port'), ('secure_port', 'Secure VDI port'),
-        ('token_count', 'Token Count')]:
+            ('name', 'Name'), ('uuid', 'UUID'), ('source', 'Source'),
+            ('discovered', 'Discovered'), ('host_subject', 'Host subject'),
+            ('hypervisor', 'Hypervisor'), ('hypervisor_ip', 'Hypervisor IP'),
+            ('insecure_port', 'Insecure VDI port'), ('secure_port', 'Secure VDI port'),
+            ('token_count', 'Token Count')]:
         if c.get(field):
             if field == 'discovered':
                 print(format % (field_pretty,
@@ -271,7 +273,7 @@ def _vv_helper(execute, output, vv):
             if execute != 'none':
                 p = subprocess.run('%s %s' % (execute, temp_name), shell=True)
                 LOG.debug(
-                    'Viewer process exited with %d return code'  % p.returncode)
+                    'Viewer process exited with %d return code' % p.returncode)
         finally:
             if os.path.exists(temp_name):
                 os.unlink(temp_name)
@@ -283,7 +285,7 @@ def _vv_helper(execute, output, vv):
         if execute != 'none':
             p = subprocess.run('%s %s' % (execute, temp_name), shell=True)
             LOG.debug(
-                    'Viewer process exited with %d return code'  % p.returncode)
+                    'Viewer process exited with %d return code' % p.returncode)
 
 
 @console.command(name='direct', help='Connect directly to a console')
@@ -320,7 +322,7 @@ def proxy_console(ctx, source, uuid, execute, output):
 @click.argument('source', type=click.STRING)
 @click.argument('uuid', type=click.STRING)
 @click.pass_context
-def proxy_console(ctx, source, uuid):
+def terminate_console(ctx, source, uuid):
     ctx.obj['CLIENT'].console_terminate(source, uuid)
 
 
@@ -389,11 +391,8 @@ def show_session(ctx, session):
     for chan in s:
         created = datetime.datetime.fromtimestamp(chan['created'])
         x.add_row([chan['channel_type'], chan['client_ip'], chan['client_port'],
-                    created, chan['node'], chan['pid']])
+                   created, chan['node'], chan['pid']])
     print(x)
-
-
-
 
 
 @session.command(name='terminate', help='Terinate a specific session')
