@@ -1,0 +1,8 @@
+[
+    {
+        "enforcement": "active",
+        "id": 24071373,
+        "name": "Protect default branch history",
+        "target": "branch"
+    }
+]
