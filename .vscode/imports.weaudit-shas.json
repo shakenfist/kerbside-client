@@ -1,6 +1,17 @@
 {
   "version": 1,
   "files": {
+    ".github/exported-config/ruleset-protect-default-branch-history.json": {
+      "sha": "25af15fa8586abd91ca813d32abd253ae29a3fe0",
+      "date": "2026-09-01",
+      "imported": {
+        "repo": "shakenfist/development",
+        "reviewer": "mikal",
+        "path": ".github/exported-config/ruleset-protect-default-branch-history.json",
+        "commit": "05539904acd0e720c095aafcbf7101c2e4c4122c",
+        "verified": true
+      }
+    },
     ".github/workflows/codeql-analysis.yml": {
       "sha": "975f656d8135aefe12ba2f2094d8671460ef1a8a",
       "date": "2026-10-01",
