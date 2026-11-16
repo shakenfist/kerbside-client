@@ -13,7 +13,7 @@ disk and no daemon.
 |-----------|------|----------------|
 | CLI | `kerbside_client/main.py` | The `kerbside-client` entry point: a click command group per noun (`source`, `console`, `session`), output formatting, and launching the viewer |
 | API client | `kerbside_client/apiclient.py` | `Client`, the HTTP layer: capability probe, authentication, request/response logging, status-code-to-exception mapping |
-| Unit tests | `kerbside_client/tests/` | A package with no tests in it yet |
+| Unit tests | `kerbside_client/tests/unit/` | stestr suite over both modules, run by `tox -epy3`; see [docs/testing.md](docs/testing.md) |
 
 Two files, 650 lines. Anything that is not output formatting or a
 click decorator belongs in `apiclient.py`, so that a caller embedding
@@ -119,7 +119,7 @@ then the `release-process` consistency criterion fails here by design.
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `ci.yml` | pull request, push to `develop`, dispatch | pre-commit hooks, flake8 over changed files, then the shared automatic reviewer |
+| `ci.yml` | pull request, push to `develop`, dispatch | pre-commit hooks, flake8 over changed files, the unit tests, then the shared automatic reviewer |
 | `secret-scan.yml` | pull request, push to `develop` | gitleaks over all history reachable from `HEAD`, with a positive control |
 | `codeql-analysis.yml` | pull request, push, weekly | CodeQL, skipped for review-only and docs-only changes and for forks |
 | `pr-re-review.yml` | issue comment | re-runs the automatic review on request |
@@ -131,6 +131,12 @@ then the `release-process` consistency criterion fails here by design.
 Everything but the gitleaks job runs on the `static` runner pool,
 because nothing else installs an OS package. gitleaks is only packaged
 from Debian 13 onward, so its job takes a throwaway `vm` runner.
+
+## Documentation
+
+`docs/` holds the deep dives. There is one so far:
+[docs/testing.md](docs/testing.md), on how the unit tests are
+structured, what they mock and why four of them are expected failures.
 
 ## Human review tracking
 

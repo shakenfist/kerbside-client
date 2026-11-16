@@ -6,10 +6,11 @@
 # one.
 #
 # The whole gate is one job, because there is one gate's worth of work:
-# the pre-commit hooks and flake8 over what changed. There are no unit
-# tests here to run -- kerbside_client/tests/ holds only its __init__
-# files -- so nothing invokes stestr. When tests arrive, they belong in
-# this job and in the automated reviewer's needs list below.
+# the pre-commit hooks, flake8 over what changed, and the unit tests.
+# The suite runs in well under a second and needs nothing installed
+# beyond the package's own test extra, so splitting it into a second
+# job would spend more wall clock on a second checkout and a second
+# venv than the tests themselves take.
 #
 # Both steps run on a static runner: nothing here installs an OS package
 # or otherwise changes the machine, so nothing needs a throwaway VM.
@@ -47,12 +48,12 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
+  check:
+    name: Lint and unit tests
     runs-on: [self-hosted, static]
     timeout-minutes: 15
     concurrency:
-      group: ${{ github.workflow }}-lint-${{ github.ref }}
+      group: ${{ github.workflow }}-check-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -105,6 +106,15 @@ jobs:
         run: |
           tox -eflake8
 
+      # The unit tests, through tox so that this is the same command a
+      # developer runs locally. tox builds the package into its own
+      # environment, so this also proves the package still builds and
+      # imports -- nothing else in this workflow does.
+      - name: Run the unit tests
+        timeout-minutes: 10
+        run: |
+          tox -epy3
+
       - name: Clean up
         if: always()
         run: |
@@ -130,7 +140,7 @@ jobs:
   # null pull request.
   automated_reviewer:
     name: "Automated reviewer"
-    needs: [lint]
+    needs: [check]
     permissions:
       contents: read
       pull-requests: write

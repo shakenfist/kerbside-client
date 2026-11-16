@@ -15,3 +15,10 @@ kerbside_client/_version.py
 build/
 dist/
 *.egg-info/
+
+# stestr's test repository and the coverage data and report that
+# "tox -ecover" leaves behind.
+.stestr/
+.coverage
+.coverage.*
+cover/

@@ -26,23 +26,33 @@ that introduces it rather than sitting in the backlog.
 ```bash
 pre-commit run --all-files     # actionlint, shellcheck, skillsaw
 tox -eflake8                   # flake8 over the files HEAD touched
+tox -epy3                      # the unit tests
 ```
 
-Both run in CI. `tox -eflake8` diffs against `HEAD~1`, so it reports
-nothing until the change is committed -- run it after committing, and
-amend if it complains.
+All three run in CI. `tox -eflake8` diffs against `HEAD~1`, so it
+reports nothing until the change is committed -- run it after
+committing, and amend if it complains.
 
-## There are no unit tests
+## Unit tests
 
-`kerbside_client/tests/` is an empty package: no test modules, and no
-`.stestr.conf` for stestr to read. `tox` with no environment, or
-`tox -epy3`, therefore does not work, and `ci.yml` deliberately runs no
-test step. Adding the first test means adding `.stestr.conf`, a test
-step to `ci.yml`, and the lint job stays in the automatic reviewer's
-`needs:` list alongside it.
+They live in `kerbside_client/tests/unit/`, run under stestr via
+`tox -epy3`, and cover both modules. `docs/testing.md` is the guide;
+three things in it will bite before you have read it.
 
-Treat this as the largest gap in the repository rather than as a
-convention to preserve.
+* Inherit from `base.ApiClientStateTestCase` or
+  `base.MainStateTestCase`, not from `testtools.TestCase`. Both
+  modules keep state in globals -- `apiclient.LOG`,
+  `apiclient.VERSION_CACHE`, `main.CLIENT` -- and those base classes
+  put it back.
+* Invoke a command object directly with an `obj=` context rather than
+  going through the `cli` group, which builds a real API client and
+  probes the server before it dispatches.
+* Four tests are `expectFailure` over known defects, and testtools
+  fails the run when one starts passing. Fixing a defect therefore
+  means deleting its `expectFailure` in the same change.
+
+Mock the boundary -- `requests.request` for the API client,
+`apiclient.Client` for the CLI -- and never the code under test.
 
 ## Version handling
 
@@ -93,7 +103,9 @@ fails if they disagree. Both come from the supported platform table in
 
 ## Known defects
 
-Neither is fixed, and both have an issue:
+None is fixed, and each has an issue and a test marked `expectFailure`
+that will start failing the moment it is -- see the table in
+`docs/testing.md`.
 
 * [#17](https://github.com/shakenfist/kerbside-client/issues/17):
   `_vv_helper()` refers to `temp_name` in the branch where the caller
@@ -105,11 +117,21 @@ Neither is fixed, and both have an issue:
   group constructs the API client -- which probes the server for its
   capabilities -- before any subcommand, so printing the client's own
   version requires a reachable Kerbside API.
+* [#30](https://github.com/shakenfist/kerbside-client/issues/30):
+  `session show` does not work in any output format but `--json`.
+  `get_sessions()` returns a dict keyed by session id, and
+  `show_session()` iterates that value rather than its `channels`
+  list, so it walks the key strings and raises `TypeError` on the
+  first subscript.
+* [#31](https://github.com/shakenfist/kerbside-client/issues/31):
+  `session list` raises `UnboundLocalError` on a session with no
+  channels: the loop variable is read after the loop, and an empty
+  list never binds it. One such session hides the whole listing.
 
 ## Documentation
 
-There is no `docs/` directory. `README.md` is a pitch and points at the
-Kerbside repository for everything about the server. When this grows
-documentation beyond the two files in the root, it goes in `docs/`,
-with a summary and a link left behind here -- not another section in
-this file, which is loaded into every session.
+`docs/` holds the deep dives -- [docs/testing.md](docs/testing.md) so
+far. `README.md` is a pitch and points at the Kerbside repository for
+everything about the server. New documentation goes in `docs/`, with a
+summary and a link left behind here, not another section in this file,
+which is loaded into every session.
