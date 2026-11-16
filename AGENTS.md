@@ -54,14 +54,17 @@ The version is derived from git tags by `setuptools_scm` and written to
 * `get_user_agent()` imports it and falls back to "unreleased
   development version". Do not reintroduce `pbr`, which this used to
   read the version through; it left with `setup.py`.
-* There are no `v*` tags yet. Do not create one: nothing publishes this
-  package, and tagging without the release automation in place produces
-  a version number for a release that does not exist.
+* A pushed `v*` tag is a release: `release.yml` builds, signs and
+  publishes it to PyPI once a reviewer approves the `release`
+  environment. There are no tags yet. Do not push one until every step
+  of `RELEASE-SETUP.md` is done -- a release that fails at
+  `publish-pypi` has already force-pushed a signed tag, and the only
+  recovery is to burn that version.
 
 ## Repository settings that the files depend on
 
-Two things live in GitHub rather than in the tree, and a change to the
-tree cannot fix either:
+These live in GitHub rather than in the tree, and a change to the
+tree cannot fix any of them:
 
 * `RETEST_WORKFLOW` must be the repository variable `ci.yml`.
   `pr-retest.yml` is copied verbatim from the fleet template and
@@ -72,6 +75,12 @@ tree cannot fix either:
   pull-request-controlled code on the shared, persistent `static`
   runner pool, and that setting is the only thing in front of it. If it
   is ever relaxed, those jobs move to the throwaway `vm` pool.
+* The release path in `RELEASE-SETUP.md`: the PyPI trusted publisher,
+  the `release` environment, the `v*` tag ruleset, and the merge queue
+  on `develop` requiring "Can enqueue" and "Can merge". The queue must
+  stay serial (`max_entries_to_build: 1`), because `ci.yml`'s
+  merge-group concurrency key cancels any other queue run as
+  superseded.
 
 ## Keep these two numbers in step
 
