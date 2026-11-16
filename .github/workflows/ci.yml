@@ -30,9 +30,20 @@ name: CI
 on:
   pull_request:
     branches: [develop]
-  # There is no merge queue here, so a pull request merges on the
-  # results of its own branch and the merged commit has never been
-  # tested as merged. The push trigger is what tests it, after the fact.
+  # Merges go through a merge queue, so every commit that lands on
+  # develop is the commit a merge_group run tested, even when its base
+  # moved after the pull request run. develop is the branch that gets
+  # tagged, and that run is one release.yml's CI gate counts. "Can
+  # enqueue" and "Can merge" below are the checks the queue's ruleset
+  # requires.
+  merge_group:
+  # The push trigger tests a merged commit after the fact. Behind the
+  # queue it re-tests the commit the merge_group run already tested,
+  # which costs a few seconds of a static runner. It stays for the
+  # merges that do not go through the queue -- any merged before the
+  # queue was switched on, and any that bypass it -- so that develop
+  # never holds a commit with no CI result at all. Its branches filter
+  # is what stops a pushed release tag starting a CI run of its own.
   push:
     branches: [develop]
   # pr-retest.yml re-runs this workflow by dispatching it, which is how
@@ -51,8 +62,35 @@ jobs:
     name: Lint
     runs-on: [self-hosted, static]
     timeout-minutes: 15
+    # The key differs by event, because github.ref is the right key on
+    # only one of the three that matter:
+    #
+    # * On a push it is develop for every commit, so a later merge would
+    #   cancel the previous commit's run, and the release gate counts a
+    #   cancelled run as a failure. Even cancel-in-progress: false would
+    #   not save it -- a group holds one running and one pending run,
+    #   and a third arrival cancels the pending one -- so a push keys by
+    #   commit and is never cancelled.
+    # * On a merge group it is a new queue branch on every rebuild, so a
+    #   superseded run would never be cancelled. Key on the base branch
+    #   instead. That is safe because the queue is serial
+    #   (max_entries_to_build: 1): any other first attempt of a
+    #   merge_group run has already been abandoned. A re-run is not a
+    #   queue build, though. It keeps its original event, so with the
+    #   base-branch key a "Re-run jobs" on an old queue run would cancel
+    #   the live queue entry or be cancelled by it; re-runs keep their
+    #   own queue branch's group. The merge_group- prefix keeps a queue
+    #   run out of a workflow_dispatch run's group on develop, whose
+    #   github.ref is the same string.
+    # * On a pull request github.ref is the pull request, and a newer
+    #   push to it does supersede the older run.
     concurrency:
-      group: ${{ github.workflow }}-lint-${{ github.ref }}
+      group: >-
+        ${{ github.workflow }}-lint-${{
+        github.event_name == 'push' && github.sha
+        || github.event_name == 'merge_group' && github.run_attempt == '1'
+        && format('merge_group-{0}', github.event.merge_group.base_ref)
+        || github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -124,10 +162,10 @@ jobs:
   # inheriting would hand this repository's secrets to a workflow living
   # in another repository, called at a moving @main, for no benefit.
   #
-  # No event guard is needed for the workflow_dispatch and push triggers
-  # above. The reusable workflow's own job is conditioned on the event
-  # being a pull request, so those runs skip it rather than failing on a
-  # null pull request.
+  # No event guard is needed for the workflow_dispatch, merge_group and
+  # push triggers above. The reusable workflow's own job is conditioned
+  # on the event being a pull request, so those runs skip it rather than
+  # failing on a null pull request.
   automated_reviewer:
     name: "Automated reviewer"
     needs: [lint]
@@ -135,3 +173,61 @@ jobs:
       contents: read
       pull-requests: write
     uses: shakenfist/actions/.github/workflows/pr-auto-review.yml@main
+
+  # The two checks the merge queue's ruleset requires, collecting this
+  # workflow's jobs into one result each, in the shape described at
+  # https://boinkor.net/2023/11/neat-github-actions-patterns-for-github-merge-queues/
+  # "Can enqueue" reports on pull requests and "Can merge" on merge
+  # queue entries; each is skipped, which GitHub treats as success, on
+  # the other event. Both require every need to succeed, because lint is
+  # never skipped on either event. The automated reviewer is advisory
+  # and deliberately not in needs: it must not be able to block a merge
+  # on an API hiccup.
+  can-enqueue:
+    name: "Can enqueue"
+    needs:
+      - lint
+    # always(), not !cancelled(): if the run is cancelled as a
+    # whole, this must still run and fail on the cancelled needs.
+    # A skipped check satisfies a required one, so a skip here
+    # would let an untested commit through.
+    if: ${{ always() && github.event_name != 'merge_group' }}
+    # The steps read only the needs context, so the token needs nothing.
+    permissions: {}
+    runs-on: [self-hosted, static]
+    timeout-minutes: 5
+    steps:
+      - name: Transform outcomes
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "ALL_SUCCESS=$(echo "${NEEDS_JSON}" | jq 'to_entries | map(.value.result == "success") | all')" >> "${GITHUB_ENV}"
+      - name: Check outcomes
+        run: |
+          [ "${ALL_SUCCESS}" == true ]
+
+  can-merge:
+    name: "Can merge"
+    needs:
+      - lint
+    # always(), not !cancelled(): if the run is cancelled as a
+    # whole, this must still run and fail on the cancelled needs.
+    # A skipped check satisfies a required one, so a skip here
+    # would let an untested commit through.
+    if: ${{ always() && github.event_name == 'merge_group' }}
+    # The steps read only the needs context, so the token needs nothing.
+    permissions: {}
+    runs-on: [self-hosted, static]
+    timeout-minutes: 5
+    steps:
+      # Every need must succeed: this run is the one release.yml's CI
+      # gate counts, so a job that skipped here would let an untested
+      # commit reach a release.
+      - name: Transform outcomes
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "ALL_SUCCESS=$(echo "${NEEDS_JSON}" | jq 'to_entries | map(.value.result == "success") | all')" >> "${GITHUB_ENV}"
+      - name: Check outcomes
+        run: |
+          [ "${ALL_SUCCESS}" == true ]
