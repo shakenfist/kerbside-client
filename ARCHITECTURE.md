@@ -108,18 +108,27 @@ time. There are no tags yet, so a build from this tree produces a
 `0.1.devN` version and `get_user_agent()` reports "unreleased
 development version" when run from a checkout that was never built.
 
-Nothing publishes this package. There is no `release.yml`, no PyPI
-project and no merge queue on `develop`, so the only way to install it
-is from a git checkout. Adopting the fleet's release automation is
-tracked as
-[#16](https://github.com/shakenfist/kerbside-client/issues/16); until
-then the `release-process` consistency criterion fails here by design.
+Releases use the fleet's release automation, copied from
+`templates/release-automation/` in shakenfist/development. Pushing a
+`v*` tag runs `release.yml`: a gate that fails unless `ci.yml`
+succeeded on the tagged commit, a build checked by `twine` and
+`check-dist`, then -- after a reviewer approves the `release`
+environment -- a Sigstore-signed tag, a PyPI upload through a trusted
+publisher, and a GitHub release. `RELEASE-SETUP.md` is the one-time
+GitHub and PyPI configuration this needs. Nothing has been released
+yet, so until the first tag the only way to install the client is from
+a git checkout.
+
+The gate is why merges go through a merge queue on `develop`: the
+queue's `merge_group` run tests each commit as it will land, and that
+run is the one the gate counts.
 
 ## Continuous integration
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `ci.yml` | pull request, push to `develop`, dispatch | pre-commit hooks, flake8 over changed files, then the shared automatic reviewer |
+| `ci.yml` | pull request, merge group, push to `develop`, dispatch | pre-commit hooks, flake8 over changed files, then the shared automatic reviewer; "Can enqueue" and "Can merge" for the merge queue |
+| `release.yml` | `v*` tag, dispatch | CI gate, build, signed tag, PyPI and GitHub release (a dispatch only builds) |
 | `secret-scan.yml` | pull request, push to `develop` | gitleaks over all history reachable from `HEAD`, with a positive control |
 | `codeql-analysis.yml` | pull request, push, weekly | CodeQL, skipped for review-only and docs-only changes and for forks |
 | `pr-re-review.yml` | issue comment | re-runs the automatic review on request |
@@ -128,9 +137,11 @@ then the `release-process` consistency criterion fails here by design.
 | `export-repo-config.yml` | daily | writes GitHub settings into the tree as a pull request |
 | `prune-reviews.yml` | push, schedule | maintains the human review marks |
 
-Everything but the gitleaks job runs on the `static` runner pool,
-because nothing else installs an OS package. gitleaks is only packaged
-from Debian 13 onward, so its job takes a throwaway `vm` runner.
+Everything but two jobs runs on the `static` runner pool, because
+nothing else changes the machine. The two take a throwaway `vm` runner:
+gitleaks, which is only packaged from Debian 13 onward, and the
+release's `sign-tag`, which installs gitsign with `sudo` and writes
+global git config.
 
 ## Human review tracking
 
