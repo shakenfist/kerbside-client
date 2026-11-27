@@ -9,6 +9,7 @@ self-hosted-runner:
     - claude-code
     - debian-13
     - static
+    - persistent
     - vm
     - s
 
